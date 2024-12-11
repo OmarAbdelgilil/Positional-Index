@@ -63,7 +63,7 @@ public class PositionalIndex {
         do {
             System.out.println("Enter Query:(home AND/OR increase)");
             queryString = in.nextLine();
-            query(queryString);
+            query(queryString.toLowerCase());
             System.out.println("to end search: stop");
             System.out.println();
             System.out.println();
@@ -335,7 +335,8 @@ public class PositionalIndex {
         if(QueryString.contains("and not")){
             String[] querySplitted = QueryString.split("and not");
             docs = docsForAndNot(querySplitted);
-            queryTerms = querySplitted[0].split(" ");
+            String queryAndNotRemoved = QueryString.replaceFirst("and not","");
+            queryTerms = queryAndNotRemoved.split(" ");
         }
         else if(QueryString.contains("and"))
         {
@@ -349,24 +350,25 @@ public class PositionalIndex {
             String[] querySplitted = QueryString.split("or");
 
              HashMap<Integer,Set<Integer>>  m = docsForOr(querySplitted);
+            String queryOrRemoved = QueryString.replaceFirst("or","");
              if(m.containsKey(1))
              {
                  docs = m.get(1);
                  String[]e = {};
-                 queryTerms = e;
+                 queryTerms = queryOrRemoved.split(" ");
              }
              else if(m.containsKey(2))
              {
                  docs = m.get(2);
-                 queryTerms = querySplitted[1].split(" ");
+                 queryTerms = queryOrRemoved.split(" ");
              }
              else if(m.containsKey(3))
              {
                  docs = m.get(3);
-                 queryTerms = querySplitted[0].split(" ");
+                 queryTerms = queryOrRemoved.split(" ");
              } else if (m.containsKey(4)) {
                  docs = m.get(4);
-                 queryTerms = QueryString.replaceFirst("or","").split(" ");
+                 queryTerms = queryOrRemoved.split(" ");
              }
 
         }
@@ -375,7 +377,7 @@ public class PositionalIndex {
             queryTerms =QueryString.split(" ");
         }
 
-       if(queryTerms.length > 0 && !docs.isEmpty())
+       if(queryTerms.length > 0)
        {
           queryTerms = Arrays.stream(queryTerms)
                .filter(term -> term != null && !term.trim().isEmpty())
@@ -386,16 +388,27 @@ public class PositionalIndex {
            query_tfidf = calculateQueryTfIdf(query_tf_weight,query_idf);
            queryLength = calculateQueryLength(query_tfidf);
            query_norm_tfidf = calculateQueryNormTfIdf(queryLength,query_tfidf);
-           docProduct = calculateDocProduct(query_norm_tfidf,docs);
-           docSum = sumDocs(docProduct);
+           if( !docs.isEmpty())
+           {
+               docProduct = calculateDocProduct(query_norm_tfidf,docs);
+               docSum = sumDocs(docProduct);
+           }
+
            System.out.println("Query: ");
            printQueryTable(queryTerms,query_tf,query_tf_weight,query_idf,query_tfidf,query_norm_tfidf);
+           System.out.println("Query length: "+queryLength);
            System.out.println("===========================================");
-           System.out.println("Product: ");
-           printQueryDocTable(docProduct,docs,docSum);
-           System.out.println("===========================================");
-           printSimilarity(docSum,docs);
-           printReturnedDocs(docSum);
+           if( !docs.isEmpty())
+           {
+               System.out.println("Product: ");
+               printQueryDocTable(docProduct,docs,docSum);
+               System.out.println("===========================================");
+               printSimilarity(docSum,docs);
+               printReturnedDocs(docSum);
+           }
+           else {
+               System.out.println("No docs found");
+           }
 
 
 
