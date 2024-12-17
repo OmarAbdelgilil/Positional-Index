@@ -1,7 +1,3 @@
-import com.sun.source.tree.Tree;
-
-import javax.swing.*;
-import java.awt.*;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -27,7 +23,7 @@ public class PositionalIndex {
     public static TreeMap<String,TreeMap<Integer,Double>> tfIdfNormalized  = new TreeMap<>();
     public static HashSet<String> distinctTerms = new HashSet<>();
     public static HashSet<Integer> distinctDocs = new HashSet<>();
-     public  static  String[] keyWords = {"and","or"};
+    public  static  String[] keyWords = {"and","or"};
     public static void main(String[] args) throws IOException {
         String folderPath = (new File("").getAbsolutePath()) + "\\docs";
         readFileAndBuildPostingList(folderPath);
@@ -63,7 +59,7 @@ public class PositionalIndex {
         do {
             System.out.println("Enter Query:(home AND/OR increase)");
             queryString = in.nextLine();
-            query(queryString.toLowerCase());
+            query(queryString);
             System.out.println("to end search: stop");
             System.out.println();
             System.out.println();
@@ -149,7 +145,7 @@ public class PositionalIndex {
                     continue;
                 }
                 countTermWeight.put(docId, 1+Math.log10(frequency.getValue()));
-             }
+            }
             tfWeight.put(term,countTermWeight);
         }
     }
@@ -332,90 +328,90 @@ public class PositionalIndex {
         HashMap<String,Double> query_norm_tfidf = new HashMap<>();
         HashMap<String,HashMap<Integer,Double>> docProduct= new HashMap<>();
         HashMap<Integer,Double> docSum = new HashMap<>();
-        if(QueryString.contains("and not")){
-            String[] querySplitted = QueryString.split("and not");
+        if(QueryString.contains("AND NOT")){
+            String[] querySplitted = QueryString.split("AND NOT");
             docs = docsForAndNot(querySplitted);
-            String queryAndNotRemoved = QueryString.replaceFirst("and not","");
-            queryTerms = queryAndNotRemoved.split(" ");
+            String queryAndNotRemoved = QueryString.replaceFirst("AND NOT","");
+            queryTerms = querySplitted[0].split(" ");
         }
-        else if(QueryString.contains("and"))
+        else if(QueryString.contains("AND"))
         {
-            String[] querySplitted = QueryString.split("and");
-             docs = docsForAnd(querySplitted);
-             String andRemoved = QueryString.replaceFirst("and","");
-             queryTerms = andRemoved.split(" ");
+            String[] querySplitted = QueryString.split("AND");
+            docs = docsForAnd(querySplitted);
+            String andRemoved = QueryString.replaceFirst("AND","");
+            queryTerms = andRemoved.split(" ");
         }
-        else if(QueryString.contains("or"))
+        else if(QueryString.contains("OR"))
         {
-            String[] querySplitted = QueryString.split("or");
+            String[] querySplitted = QueryString.split("OR");
 
-             HashMap<Integer,Set<Integer>>  m = docsForOr(querySplitted);
-            String queryOrRemoved = QueryString.replaceFirst("or","");
-             if(m.containsKey(1))
-             {
-                 docs = m.get(1);
-                 String[]e = {};
-                 queryTerms = queryOrRemoved.split(" ");
-             }
-             else if(m.containsKey(2))
-             {
-                 docs = m.get(2);
-                 queryTerms = queryOrRemoved.split(" ");
-             }
-             else if(m.containsKey(3))
-             {
-                 docs = m.get(3);
-                 queryTerms = queryOrRemoved.split(" ");
-             } else if (m.containsKey(4)) {
-                 docs = m.get(4);
-                 queryTerms = queryOrRemoved.split(" ");
-             }
+            HashMap<Integer,Set<Integer>>  m = docsForOr(querySplitted);
+            String queryOrRemoved = QueryString.replaceFirst("OR","");
+            if(m.containsKey(1))
+            {
+                docs = m.get(1);
+                String[]e = {};
+                queryTerms = e;
+            }
+            else if(m.containsKey(2))
+            {
+                docs = m.get(2);
+                queryTerms = querySplitted[1].split(" ");
+            }
+            else if(m.containsKey(3))
+            {
+                docs = m.get(3);
+                queryTerms = querySplitted[0].split(" ");
+            } else if (m.containsKey(4)) {
+                docs = m.get(4);
+                queryTerms = QueryString.replaceFirst("OR","").split(" ");
+            }
 
         }
         else {
-             docs = getDocsForPhrase(QueryString.split(" "));
+            docs = getDocsForPhrase(QueryString.split(" "));
             queryTerms =QueryString.split(" ");
         }
 
-       if(queryTerms.length > 0)
-       {
-          queryTerms = Arrays.stream(queryTerms)
-               .filter(term -> term != null && !term.trim().isEmpty())
-               .toArray(String[]::new);
-           query_tf = calculateQueryTf(queryTerms);
-           query_tf_weight = calculateQueryTfWeight(query_tf);
-           query_idf = calculateQueryIdf(queryTerms);
-           query_tfidf = calculateQueryTfIdf(query_tf_weight,query_idf);
-           queryLength = calculateQueryLength(query_tfidf);
-           query_norm_tfidf = calculateQueryNormTfIdf(queryLength,query_tfidf);
-           if( !docs.isEmpty())
-           {
-               docProduct = calculateDocProduct(query_norm_tfidf,docs);
-               docSum = sumDocs(docProduct);
-           }
+        if(queryTerms.length > 0)
+        {
+            queryTerms = Arrays.stream(queryTerms)
+                    .filter(term -> term != null && !term.trim().isEmpty())
+                    .toArray(String[]::new);
+            query_tf = calculateQueryTf(queryTerms);
+            query_tf_weight = calculateQueryTfWeight(query_tf);
+            query_idf = calculateQueryIdf(queryTerms);
+            query_tfidf = calculateQueryTfIdf(query_tf_weight,query_idf);
+            queryLength = calculateQueryLength(query_tfidf);
+            query_norm_tfidf = calculateQueryNormTfIdf(queryLength,query_tfidf);
+            if( !docs.isEmpty())
+            {
+                docProduct = calculateDocProduct(query_norm_tfidf,docs);
+                docSum = sumDocs(docProduct);
+            }
 
-           System.out.println("Query: ");
-           printQueryTable(queryTerms,query_tf,query_tf_weight,query_idf,query_tfidf,query_norm_tfidf);
-           System.out.println("Query length: "+queryLength);
-           System.out.println("===========================================");
-           if( !docs.isEmpty())
-           {
-               System.out.println("Product: ");
-               printQueryDocTable(docProduct,docs,docSum);
-               System.out.println("===========================================");
-               printSimilarity(docSum,docs);
-               printReturnedDocs(docSum);
-           }
-           else {
-               System.out.println("No docs found");
-           }
+            System.out.println("Query: ");
+            printQueryTable(queryTerms,query_tf,query_tf_weight,query_idf,query_tfidf,query_norm_tfidf);
+            System.out.println("Query length: "+queryLength);
+            System.out.println("===========================================");
+            if( !docs.isEmpty())
+            {
+                System.out.println("Product: ");
+                printQueryDocTable(docProduct,docs,docSum);
+                System.out.println("===========================================");
+                printSimilarity(docSum,docs);
+                printReturnedDocs(docSum);
+            }
+            else {
+                System.out.println("No docs found");
+            }
 
 
 
-       }
-       else {
-           System.out.println("Nothing found");
-       }
+        }
+        else {
+            System.out.println("Nothing found");
+        }
 
     }
 
@@ -604,7 +600,7 @@ public class PositionalIndex {
             prod.put(term,norms);
         }
 
-       return prod;
+        return prod;
     }
     private static void printQueryTable(String[]queryTerms,HashMap<String,Integer>query_tf,HashMap<String,Double>query_tf_weight,HashMap<String,Double>query_idf,HashMap<String,Double>query_tfidf,HashMap<String,Double>query_norm_tfidf)
     {
